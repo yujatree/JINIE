@@ -1,5 +1,5 @@
 # JINIE
-Program for the Analysis of LPS ... Like a Genie !  
+Program for the Analysis of LPS ... *Like a Genie !*  
 <img width="600" height="450" alt="Image" src="https://github.com/user-attachments/assets/25e1d820-c0cb-4b06-967a-c023d6fdd8ed" />  
 **- Property List**  
 
