@@ -5,6 +5,7 @@ RED="\e[0;91m"
 GREEN="\e[0;92m"
 BLUE="\e[0;34m"
 NC="\e[0m"   # No Color
+PATH="${HOME}/CODES"
 
 # ---------------------------
 # Usage function
@@ -127,7 +128,7 @@ case $idx in
 esac
 
 # Execute file
-execfile="${HOME}/CODES/JINIE/bin/${prop}"
+execfile="${PATH}/JINIE/bin/${prop}"
 if [[ ! -x "$execfile" ]]; then
     echo ; echo " ERROR: There is no exec. file or no permission: "
     echo "             $execfile"
