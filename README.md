@@ -1,5 +1,5 @@
 # JINIE
-Program for the Analysis of LPS
+Program for the Analysis of LPS ... Like a Genie !
 
 
 **- Property List**  
