@@ -1,0 +1,3 @@
+0.05  # bin size
+1000  # bin number
+99     # time window

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+OUTPUT_DIR="OUTPUT"
+echo
+echo "=================[ WRAPPING JINIE ]=================" ; echo
+
+if [ ! -d "$OUTPUT_DIR" ]; then
+    echo " Creating directory: $OUTPUT_DIR" ; echo
+    mkdir -p "$OUTPUT_DIR"
+    if [ $? -ne 0 ]; then
+        echo " Error: Failed to create directory $OUTPUT_DIR" ; echo
+        echo "===================================================="; echo
+        exit 1
+    fi
+fi
+
+shopt -s nullglob
+files_to_move=(*.out)
+shopt -u nullglob
+
+if [ ${#files_to_move[@]} -eq 0 ]; then
+    echo " No *.out files found. Nothing to move!" ; echo
+    echo "===================================================="; echo
+    exit 0
+fi
+
+echo " Moving *.out files to $OUTPUT_DIR/..." ; echo
+mv *.out "$OUTPUT_DIR/"
+
+if [ $? -eq 0 ]; then
+    echo " Successfully moved ${#files_to_move[@]} files !" ; echo
+    echo "===================================================="; echo
+else
+    echo " Warning: File moving encountered an issue."
+    echo "          Check the directory permissions." ; echo
+    echo "===================================================="; echo
+fi
+

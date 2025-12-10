@@ -1,0 +1,55 @@
+====== MSD Calculation start ======
+Start   : 2025-12-09 21:20:32
+Inputs  : nvt.dcd test.dcd
+===================================
+ 
+ =============================
+  DCD trajectory file READING 
+ =============================
+ 
+           2  files are loaded
+ 
+ num of frames:          101
+ num of atoms :         4096
+ Trajectory end :       100000
+ num of frames:           11
+ num of atoms :         4096
+ Trajectory end :       110000
+ 
+ ------------INFO-------------
+ Initial time    |           0
+ End time        |      110000
+ Time interval   |        1000
+ Number of trajs |         111
+ Number of atoms |        4096
+ -----------------------------
+ 
+ 
+ ---------LPS System----------
+  Number of Li+ |         1536
+  Number of P5+ |          512
+  Number of S2- |         2048
+ -----------------------------
+           1 th file READING..
+           1 th file DONE..
+           2 th file READING..
+           2 th file DONE..
+ 
+ -----------------------------
+           SUCCESS !
+ -----------------------------
+ 
+ 
+ -----------------------------
+          MSD START !
+ -----------------------------
+ 
+ Processing   10 th trajectory
+ Processing   20 th trajectory
+ Processing   30 th trajectory
+ 
+    Saved as 'MSD.out' file   
+ -----------------------------
+           SUCCESS !
+ -----------------------------
+ 

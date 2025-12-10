@@ -1,0 +1,33 @@
+#!/bin/bash
+
+echo "===================================================="
+echo ""
+echo "        █████ █████ ██████   █████ █████ ██████████"
+echo "       ░░███ ░░███ ░░██████ ░░███ ░░███ ░░███░░░░░█"
+echo "        ░███  ░███  ░███░███ ░███  ░███  ░███  █ ░ "
+echo "        ░███  ░███  ░███░░███░███  ░███  ░██████   "
+echo "        ░███  ░███  ░███ ░░██████  ░███  ░███░░█   "
+echo "  ███   ░███  ░███  ░███  ░░█████  ░███  ░███ ░   █"
+echo " ░░████████   █████ █████  ░░█████ █████ ██████████"
+echo "  ░░░░░░░░   ░░░░░ ░░░░░    ░░░░░ ░░░░░ ░░░░░░░░░░ "
+echo " --------------------------------------------------"
+echo "          ▗ ▌     ▖ ▄▖▄▖        ▜     ▘    ▗     ▜ " 
+echo "      ▄▖  ▜▘▛▌█▌  ▌ ▙▌▚   ▀▌▛▌▀▌▐ ▌▌▛▘▌▛▘  ▜▘▛▌▛▌▐ "
+echo "          ▐▖▌▌▙▖  ▙▖▌ ▄▌  █▌▌▌█▌▐▖▙▌▄▌▌▄▌  ▐▖▙▌▙▌▐▖"
+echo "                                  ▄▌               "                        
+echo "===================================================="
+echo ""
+echo ""
+echo " [1] Mean Squared Displacement"
+echo " [2] Non-Gaussian Parameter"
+echo " [3] Ionic Conductivity"
+echo " [4] Radial Distribution Function"
+echo " [5] Self-part van Hove Correlation Function"
+echo " [6] Hop Function"
+echo " [7] DCD to Lammps trajectory"
+echo " [8] EXIT"
+echo " "
+echo " [Enter the property index] : "
+
+
+
