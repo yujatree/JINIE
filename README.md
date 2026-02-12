@@ -7,7 +7,7 @@ Program for the Analysis of LPS ... *Like a Genie !*
 ☑︎ ENSEMBLE_READER: DCD Reader (ensemble)    
 ☑︎ D2L: DCD to Lammps trajectory  
   
-**- Structural Property List**   
+**- Structure Property List**   
   
 ☑︎ AGD: Angle Distribution  
 ☑︎ CLS: Polyanion Clustering  
@@ -15,7 +15,7 @@ Program for the Analysis of LPS ... *Like a Genie !*
 ☑︎ R2X: RDF to X-ray diffraction  
 ☑︎ R2S: RDF to Neutron diffraction  
   
-**- Dynamical Property List**   
+**- Dynamics Property List**   
   
 ☑︎ MSD: Mean Squared Displacement, $<r^2(t)>$  
 ☑︎ NGP: Non-Gaussian Parameter, $\alpha_2(t)$  
