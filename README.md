@@ -1,15 +1,5 @@
 <div align="center">
 
-```
-        █████ █████ ██████   █████ █████ ██████████
-       ░░███ ░░███ ░░██████ ░░███ ░░███ ░░███░░░░░█
-        ░███  ░███  ░███░███ ░███  ░███  ░███  █ ░
-        ░███  ░███  ░███░░███░███  ░███  ░██████
-        ░███  ░███  ░███ ░░██████  ░███  ░███░░█
-  ███   ░███  ░███  ░███  ░░█████  ░███  ░███ ░   █
- ░░████████   █████ █████  ░░█████ █████ ██████████
-  ░░░░░░░░   ░░░░░ ░░░░░    ░░░░░ ░░░░░ ░░░░░░░░░░
-```
 
 **Fortran toolkit for the analysis of Li₃PS₄ molecular dynamics trajectories**
 
@@ -31,12 +21,7 @@
 
 JINIE is a Fortran-based analysis toolkit designed for Li₃PS₄ (LPS) glass and crystal MD simulations. It covers the full analysis pipeline — from structural properties and ion dynamics to Li-ion hopping kinetics and PS₄ rotational motion — through an interactive terminal UI powered by `fzf`.
 
-```
-@..@             ▄▖    ▜     ▘     ▐▘   ▖ ▄▖▄▖
-(----)           ▌▌▛▌▀▌▐ ▌▌▛▘▌▛▘ ▛▌▜▘  ▌ ▙▌▚
-( >__< )         ▛▌▌▌█▌▐▖▙▌▄▌▌▄▌ ▙▌▐   ▙▖▌ ▄▌
-^^ ~~ ^^                 ▄▌
-```
+
 
 ---
 
