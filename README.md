@@ -5,7 +5,7 @@
 
 *Program for the Analysis of LPS — Like a Genie !*
 
-<img width="600" height="450" alt="JINIE Screenshot" src="https://github.com/user-attachments/assets/25e1d820-c0cb-4b06-967a-c023d6fdd8ed" />
+<img width="600" height="500" alt="image" src="https://github.com/user-attachments/assets/a510dde4-90a3-42c0-bd28-10e4367ea25d" />
 
 <br>
 
