@@ -17,7 +17,7 @@ program radial_distribution_function
         call dcd_reader
 
 999	format(F7.3," ",7(G0,1X)/)
-998	format(A,I4,A)
+998	format(A,I5,A)
 
 	open(50, file='/mnt/CALC_SSD/jina/CODES/JINIE/inp/bin.inp', status='old')
 	open(100, file='RDF.out', status='unknown')
@@ -36,7 +36,6 @@ program radial_distribution_function
 	write(*,'(22X,I7)'), bin
 	print*, " Trajectories to average  : "
 	write(*,'(20X,I7)'), time_window
-time_window=1
 	print*
 	print*, " CAUTION : valid only w/ NVT"
 
@@ -55,44 +54,49 @@ time_window=1
 	      do k=j+1, num_Li
 	         call pbc_dist(i, j, k, dist)
 	         bin_num=int(dist/bin_size)+1
+	         if (bin_num > bin) cycle
 	         g(1,bin_num)=g(1,bin_num)+2.d0
 	      enddo
 	   enddo
 	   ! P-P RDF
 	   do j=1, num_P-1
-	      idx1=num_Li+j    ! To match P idx
+	      idx1=num_Li+j
 	      do k=j+1, num_P
 	         idx2=num_Li+k
 	         call pbc_dist(i, idx1, idx2, dist)
 	         bin_num=int(dist/bin_size)+1
+	         if (bin_num > bin) cycle
 	         g(2,bin_num)=g(2,bin_num)+2.d0
 	      enddo
 	   enddo
 	   ! S-S RDF
 	   do j=1, num_S-1
-	      idx1=num_Li+num_P+j    ! To match P idx
+	      idx1=num_Li+num_P+j
 	      do k=j+1, num_S
 	         idx2=num_Li+num_P+k
 	         call pbc_dist(i, idx1, idx2, dist)
 	         bin_num=int(dist/bin_size)+1
+	         if (bin_num > bin) cycle
 	         g(3,bin_num)=g(3,bin_num)+2.d0
 	      enddo
 	   enddo
 	   ! Li-P RDF
 	   do j=1, num_Li
 	      do k=1, num_P
-	         idx1=num_Li+k ! To match P idx
+	         idx1=num_Li+k
 	         call pbc_dist(i, j, idx1, dist)
 	         bin_num=int(dist/bin_size)+1
+	         if (bin_num > bin) cycle
 	         g(4,bin_num)=g(4,bin_num)+1.d0
 	      enddo
 	   enddo
 	   ! Li-S RDF
 	   do j=1, num_Li
 	      do k=1, num_S
-	         idx1=num_Li+num_P+k ! To match S idx
+	         idx1=num_Li+num_P+k
 	         call pbc_dist(i, j, idx1, dist)
 	         bin_num=int(dist/bin_size)+1
+	         if (bin_num > bin) cycle
 	         g(5,bin_num)=g(5,bin_num)+1.d0
 	      enddo
 	   enddo
@@ -100,9 +104,10 @@ time_window=1
 	   do j=1, num_P
 	      idx1=num_Li+j
 	      do k=1, num_S
-	         idx2=num_Li+num_P+k ! To match P idx
+	         idx2=num_Li+num_P+k
 	         call pbc_dist(i, idx1, idx2, dist)
 	         bin_num=int(dist/bin_size)+1
+	         if (bin_num > bin) cycle
 	         g(6,bin_num)=g(6,bin_num)+1.d0
 	      enddo
 	   enddo
@@ -113,7 +118,7 @@ time_window=1
 
 	do i=1, bin
 
-	   g(7,i)=(g(1,i)+g(2,i)+g(3,i)+g(4,i)+g(5,i)+g(6,i))/dble(nmedia*nmedia)
+	   g(7,i)=(g(1,i)+g(2,i)+g(3,i)+2.d0*(g(4,i)+g(5,i)+g(6,i)))/dble(nmedia*(nmedia-1))
 	   g(1,i)=g(1,i)/dble(num_Li*(num_Li-1))
 	   g(2,i)=g(2,i)/dble(num_P*(num_P-1))
 	   g(3,i)=g(3,i)/dble(num_S*(num_S-1))
@@ -121,7 +126,7 @@ time_window=1
 	   g(5,i)=g(5,i)/dble(num_Li*num_S)
 	   g(6,i)=g(6,i)/dble(num_P*num_S)
 
-	   r=(dble(i)-0.5)*bin_size
+	   r=(dble(i)-0.5d0)*bin_size
 
 	   do j=1,7
 	      if (i==1) then
@@ -142,6 +147,7 @@ time_window=1
         print*, "-----------------------------"
 	print*
 
+	close(50)
 	close(100)
 
 !---------------------------------------------------------------------------------------

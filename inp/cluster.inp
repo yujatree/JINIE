@@ -1,0 +1,5 @@
+2.5     ! P-S cutoff distance (Angstrom)
+4.5     ! P-P cutoff distance (Angstrom)
+3.7     ! S-S cutoff distance (Angstrom)
+
+500     ! time_window (number of frames to average)

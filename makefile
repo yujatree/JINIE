@@ -3,43 +3,53 @@
 #  Compiler: Intel Fortran Compiler (ifx)
 # ==============================================================================
 
-# Variables 
 FC        = ifx
 FFLAGS    = -O3
+LD_FLAGS  =
 SRC_DIR   = src
 BIN_DIR   = bin
-EXAMPLE_DIR = example
 
-PROGRAMS = D2L GRT ICD MSD NGP RDF
-SRCS     = $(addsuffix .f90, $(PROGRAMS))
-OBJS     = $(addsuffix .o, $(PROGRAMS))
-EXES     = $(addprefix $(BIN_DIR)/, $(PROGRAMS))
+# Program groups----------------------------------------------------------------
 
-# Default Target
+PROGRAMS_READER = D2L AGD CLS CLF RDF R2X R2N MSD NGP ICD GSRT RGRT HOP h_vis CLEAR_TRAJ HELP_EFF SIEVE_TRAJ HELP_assign# #RNGP
+
+PROGRAMS_ENSEMBLE = CRDF CDDF_Li CDDF_P CDDF_S CST
+
+PROGRAMS = $(PROGRAMS_READER) $(PROGRAMS_ENSEMBLE)
+
+EXES = $(addprefix $(BIN_DIR)/,$(PROGRAMS))
+
+# Default target----------------------------------------------------------------
+
 all: dirs $(EXES)
 
-# Directory Setup
 dirs:
 	@mkdir -p $(BIN_DIR)
 
-# Module Compilation (READER)
-$(SRC_DIR)/READER.mod $(SRC_DIR)/READER.o: $(SRC_DIR)/READER.f90
-	$(FC) $(FFLAGS) -c $< -o $(SRC_DIR)/READER.o
+# READER based program----------------------------------------------------------
 
-# Program Compilation
+$(BIN_DIR)/%: $(SRC_DIR)/%.f90
+	@echo "Building $@"
+	@if echo "$(PROGRAMS_READER)" | grep -w "$*" > /dev/null; then \
+		$(FC) $(FFLAGS) -module $(BIN_DIR) -c $(SRC_DIR)/READER.f90 -o $(BIN_DIR)/READER.o; \
+		$(FC) $(FFLAGS) -module $(BIN_DIR) $(BIN_DIR)/READER.o $< -o $@; \
+		rm -f $(BIN_DIR)/READER.o; \
+	elif echo "$(PROGRAMS_ENSEMBLE)" | grep -w "$*" > /dev/null; then \
+		$(FC) $(FFLAGS) -module $(BIN_DIR) -c $(SRC_DIR)/ENSEMBLE_READER.f90 -o $(BIN_DIR)/ENSEMBLE_READER.o; \
+		$(FC) $(FFLAGS) -module $(BIN_DIR) $(BIN_DIR)/ENSEMBLE_READER.o $< -o $@; \
+		rm -f $(BIN_DIR)/ENSEMBLE_READER.o; \
+	else \
+		echo "Error: Unknown program $*"; \
+		exit 1; \
+	fi
 
-$(BIN_DIR)/%: $(SRC_DIR)/%.f90 $(SRC_DIR)/READER.o
-	@echo "Compiling and linking $< to $@"
-	# 1. src > obj
-	$(FC) $(FFLAGS) -c $< -I$(SRC_DIR) -o $(SRC_DIR)/$*.o
-	# 2. linking objs
-	$(FC) $(FFLAGS) $(SRC_DIR)/$*.o $(SRC_DIR)/READER.o -o $@
+# ------------------------------------------------------------------------------
+# Clean
+# ------------------------------------------------------------------------------
 
-# Clean Targe 
 clean:
-	@echo "Cleaning compiled files and directories..."
-	rm -f $(SRC_DIR)/*.o $(SRC_DIR)/*.mod
-	rm -f $(BIN_DIR)/*
-	rmdir $(BIN_DIR) 2>/dev/null || true
+	@echo "Cleaning..."
+	rm -rf $(BIN_DIR)
 
-.PHONY: all dirs clean
+.PHONY: all clean dirs
+

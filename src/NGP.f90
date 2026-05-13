@@ -14,7 +14,7 @@ program non_gaussian_parameter
         call dcd_reader
 
 999	format(I6," ",4(G0,1X)/)
-998	format(A,I4,A)
+998	format(A,I5,A)
 
 	open(100, file='NGP.out', status='unknown')
 	write(100,*) "# time(ps) Li P S Total"	

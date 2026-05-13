@@ -5,7 +5,22 @@ RED="\e[0;91m"
 GREEN="\e[0;92m"
 BLUE="\e[0;34m"
 NC="\e[0m"   # No Color
-JINIE_PATH="${HOME}"
+JINIE_PATH="${HOME}/CODES"
+
+# Locate fzf: PATH → conda envs → conda pkgs cache
+FZF=$(command -v fzf 2>/dev/null)
+if [[ -z "$FZF" ]]; then
+    FZF=$(find "${HOME}/.conda/envs" "${HOME}/BIN/miniconda/envs" "/PROGRAMS/miniconda3/envs" \
+               -name "fzf" -path "*/bin/fzf" 2>/dev/null | head -1)
+fi
+if [[ -z "$FZF" ]]; then
+    FZF=$(find "${HOME}/.conda/pkgs" -name "fzf" -path "*/bin/fzf" 2>/dev/null | head -1)
+fi
+if [[ -z "$FZF" ]]; then
+    echo " ERROR: fzf not found. Install with: sudo apt install fzf"
+    echo "        or: conda install -n <env> fzf"
+    exit 1
+fi
 
 # ---------------------------
 # Usage function
@@ -27,14 +42,14 @@ usage() {
 echo
 echo -e "\e[0=90;1m====================================================\e[0;21m"
 echo
-echo -e "${RED}        █████${GREEN} █████${RED} ██████   █████${GREEN} █████${RED} ██████████"
-echo -e "${RED}       ░░███ ${GREEN}░░███ ${RED}░░██████ ░░███ ${GREEN}░░███ ${RED}░░███░░░░░█"
-echo -e "${RED}        ░███ ${GREEN} ░███ ${RED} ░███░███ ░███ ${GREEN} ░███ ${RED} ░███  █ ░ "
-echo -e "${RED}        ░███ ${GREEN} ░███ ${RED} ░███░░███░███ ${GREEN} ░███ ${RED} ░██████   "
-echo -e "${RED}        ░███ ${GREEN} ░███ ${RED} ░███ ░░██████ ${GREEN} ░███ ${RED} ░███░░█   "
-echo -e "${RED}  ███   ░███ ${GREEN} ░███ ${RED} ░███  ░░█████ ${GREEN} ░███ ${RED} ░███ ░   █"
-echo -e "${RED} ░░████████  ${GREEN} █████${RED} █████  ░░█████${GREEN} █████${RED} ██████████"
-echo -e "${RED}  ░░░░░░░░   ${GREEN}░░░░░ ${RED}░░░░░    ░░░░░ ${GREEN}░░░░░ ${RED}░░░░░░░░░░ ${NC}"
+echo -e "        █████ █████ ██████   █████ █████ ██████████"
+echo -e "       ░░███ ░░███ ░░██████ ░░███ ░░███ ░░███░░░░░█"
+echo -e "        ░███  ░███  ░███░███ ░███  ░███  ░███  █ ░ "
+echo -e "        ░███  ░███  ░███░░███░███  ░███  ░██████   "
+echo -e "        ░███  ░███  ░███ ░░██████  ░███  ░███░░█   "
+echo -e "  ███   ░███  ░███  ░███  ░░█████  ░███  ░███ ░   █"
+echo -e " ░░████████   █████ █████  ░░█████ █████ ██████████"
+echo -e "  ░░░░░░░░   ░░░░░ ░░░░░    ░░░░░ ░░░░░ ░░░░░░░░░░ "
 echo -e "\e[90;1m----------------------------------------------------\e[0;21m"
 echo -e "\e[1;32m       @..@   \e[0;21;2m         ▄▖    ▜     ▘     ▐▘ \e[90;22m ▖ ▄▖▄▖ \e[0m " 
 echo -e "\e[1;32m      (----)  \e[0;21;2m         ▌▌▛▌▀▌▐ ▌▌▛▘▌▛▘ ▛▌▜▘ \e[90;22m ▌ ▙▌▚  \e[0m "
@@ -90,42 +105,165 @@ for f in "${inputs[@]}"; do
     fi
 done
 
+# ── Section data ──────────────────────────────────────────────────────────────
+_JINIE_TMP=$(mktemp -d)
+trap 'rm -rf "$_JINIE_TMP"' EXIT
+
+cat > "$_JINIE_TMP/sec0" << 'EOF'
+AGD      Angle Distribution
+CLS      Polyanion Clustering
+CLF      Polyanion Cluster Fraction
+RDF      Radial Distribution Function
+R2X      X-ray Structure Factor
+R2N      Neutron Structure Factor
+EOF
+
+cat > "$_JINIE_TMP/sec1" << 'EOF'
+MSD      Mean Squared Displacement
+NGP      Non-Gaussian Parameter
+ICD      Ionic Conductivity
+GSRT     Self-part Van Hove Correlation
+EOF
+
+cat > "$_JINIE_TMP/sec2" << 'EOF'
+HOP      Hop Function
+EVT      Hop Event Classification
+HSH_G    Hop Shell Analysis  [Glass]
+HSH_C    Hop Shell Analysis  [Crystal]
+CDDF_Li  Conditional Distance Distribution  [Li]
+CDDF_P   Conditional Distance Distribution  [P]
+CDDF_S   Conditional Distance Distribution  [S]
+CRDF     Conditional Radial Distribution Function
+EFH      Effective Hopping Ratio
+CST      Hop Lifetime · Survival Probability
+EOF
+
+cat > "$_JINIE_TMP/sec3" << 'EOF'
+RGRT     Rotational Van Hove Correlation
+RNGP     Rotational Non-Gaussian Parameter
+EOF
+
+cat > "$_JINIE_TMP/sec4" << 'EOF'
+D2L      DCD → LAMMPS Trajectory
+HVIS     DCD → Visualization of Hop value, Event(0/1), Sieve(0/1)
+NVIS     DCD → Visualization of the Nth nearest Li/P/S when one hops
+CLR      DCD → Clear Trajectory (I mean, sieving vibrations)
+EOF
+
+# Generator: emits tab-bar line (picked up by --header-lines=1) then section items
+cat > "$_JINIE_TMP/gen.sh" << 'GENEOF'
+#!/bin/bash
+n=$1 ; TMP=$2
+label=("Structure" "Dynamics" "Hopping" "Rotation" "Etc")
+NSEC=5
+BK=$'\e[1;30m'   # black bold  (inactive tabs)
+GR=$'\e[1;32m'   # green bold  (active tab)
+RS=$'\e[0m'      # reset
+bar="${BK} ◀ "
+for ((x=0; x<NSEC; x++)); do
+    if [[ $x -eq $n ]]; then
+        bar+="${GR}[${label[$x]}]${BK}"
+    else
+        bar+=" ${label[$x]} "
+    fi
+    [[ $x -lt $((NSEC-1)) ]] && bar+=" │ "
+done
+bar+=" ▶${RS}"
+echo -e "$bar"
 echo
-echo "===================================================="
-echo
-echo -e " \e[0;4m[1]\e[24m Mean Squared Displacement"
-echo -e " \e[0;4m[2]\e[24m Non-Gaussian Parameter"
-echo -e " \e[0;4m[3]\e[24m Ionic Conductivity"
-echo -e " \e[0;4m[4]\e[24m Radial Distribution Function"
-echo -e " \e[0;4m[5]\e[24m Self-part van Hove Correlation Function"
-echo -e " \e[0;4m[6]\e[24m Hop Function"
-echo -e " \e[0;4m[7]\e[24m DCD to Lammps trajectory"
-echo -e
-echo -e " \e[2;4m[0]\e[24m EXIT\e[22;24m"
-echo
-echo "===================================================="
-echo
-read -p " [Enter the property index] : " idx
-echo
-echo "===================================================="
-echo
-case $idx in
-    1) prop="MSD" ;;
-    2) prop="NGP" ;;
-    3) prop="ICD" ;;
-    4) prop="RDF" ;;
-    5) prop="GRT" ;;
-    6) prop="HOP" ;;
-    7) prop="D2L" ;;
-    0) echo " Program ends ..."; echo 
-       echo "====================================================" ; echo
-       exit 0 
-       ;;
-    *) echo ; echo " ERROR: Enter the right index." ; echo
-       echo "====================================================" ; echo
-       exit 1 
-       ;;
+cat "$TMP/sec$n"
+GENEOF
+chmod +x "$_JINIE_TMP/gen.sh"
+
+# Prerequisite info script
+cat > "$_JINIE_TMP/prereq.sh" << 'PREEOF'
+#!/bin/bash
+prop=$1
+[[ -z "$prop" ]] && exit 0
+
+GR=$'\e[1;32m'
+WH=$'\e[0;37m'
+RS=$'\e[0m'
+DM=$'\e[2;37m'
+
+info() {
+    local cwd; cwd=$(pwd)
+    [[ "$cwd" == "$HOME"* ]] && cwd="~${cwd#$HOME}"
+    echo
+    echo -e "${GR} - Requirement${RS}"
+    echo -e "${WH}  $1${RS}"
+    echo
+    echo -e "${GR} - Input  file (JINIE/inp/...)${RS}"
+    echo -e "${WH}  $2${RS}"
+    echo
+    echo -e "${GR} - Output file (${cwd}/...) ${RS}"
+    echo -e "${WH}  $3${RS}"
+}
+
+case $prop in
+  AGD)     info " -"      " bin.inp"      " AGD.out"         ;;
+  CLS)     info " -"      " cluster.inp"  " CLS.lammpstraj" ;;
+  CLF)     info " -"      " cluster.inp"  " CLF.out"         ;;
+  RDF)     info " -"      " bin.inp"      " RDF.out"         ;;
+  R2X)     info " RDF"    " bin.inp"      " XSF.out"         ;;
+  R2N)     info " RDF"    " bin.inp"      " NSF.out"         ;;
+  MSD)     info " -"      " bin.inp"      " MSD.out"         ;;
+  NGP)     info " -"      " bin.inp"      " NGP.out"         ;;
+  ICD)     info " MSD"    " bin.inp"      " ICD.out"         ;;
+  GSRT)    info " -"      " bin.inp"      " GSRT_Li/P/S.out" ;;
+  HOP)     info " -"      " hop.inp"      " HOP.out"         ;;
+  EVT)     info " HOP"    " hop.inp"      " EVT.out"         ;;
+  HSH_G)   info " HOP"    " hop.inp"      " HSH_G.out"       ;;
+  HSH_C)   info " HOP"    " hop.inp"      " HSH_C.out"       ;;
+  CDDF_Li) info " HOP"    " hop.inp"      " CDDF_Li.out"     ;;
+  CDDF_P)  info " HOP"    " hop.inp"      " CDDF_P.out"      ;;
+  CDDF_S)  info " HOP"    " hop.inp"      " CDDF_S.out"      ;;
+  CRDF)    info " HOP"    " hop.inp"      " CRDF_Li/P/S.out" ;;
+  EFH)     info " CLR"    " hop.inp"      " EFH.out"         ;;
+  CST)     info " EVT"    " hop.inp"      " CST_Lifetime/Survival/Randomness.out" ;;
+  RGRT)    info " -"      " bin.inp"      " RGRT.out"        ;;
+  RNGP)    info " -"      " bin.inp"      " RNGP.out"        ;;
+  D2L)     info " -"      " -"            " out.lammpstraj"  ;;
+  HVIS)    info " -"      " hop.inp"      " hop.lammpstraj"  ;;
+  CLR)     info " EVT"    " hop.inp"      " clear.lammpstraj"    ;;
+  NVIS)    info " -"      " hop.inp"      " neighbor.lammpstraj" ;;
+  *)       echo -e "${DM}  No info available.${RS}"                              ;;
 esac
+PREEOF
+chmod +x "$_JINIE_TMP/prereq.sh"
+
+_JINIE_SEC="$_JINIE_TMP/state"
+echo "0" > "$_JINIE_SEC"
+
+# ── fzf selection ─────────────────────────────────────────────────────────────
+selection=$(bash "$_JINIE_TMP/gen.sh" 0 "$_JINIE_TMP" \
+  | "$FZF" --prompt="  Property ❯ " \
+        --ansi \
+        --header-lines=2 \
+        --layout=reverse \
+        --border=rounded \
+        --margin=1,2 \
+        --header=$'\n┏┳  ┳  ┳┓  ┳  ┏┓\n ┃  ┃  ┃┃  ┃  ┣ \n┗┛  ┻  ┛┗  ┻  ┗┛ : the Analysis of LPS\n────────────────────────────────────────────────────────────────────────\n\n[type] filter · [← →] section · [↑↓] navigate · [Enter] select · [Esc] cancel\n\n' \
+        --header-first \
+        --color='hl:9,hl+:9,prompt:10,pointer:9,marker:9,header:8,fg+:10,bg+:-1' \
+        --preview "bash $_JINIE_TMP/prereq.sh {1}" \
+        --preview-window=bottom:35%:wrap \
+        --bind "right:reload(n=\$(cat $_JINIE_SEC); n=\$(( (n+1)%5 )); echo \$n > $_JINIE_SEC; bash $_JINIE_TMP/gen.sh \$n $_JINIE_TMP)+first" \
+        --bind "left:reload(n=\$(cat $_JINIE_SEC); n=\$(( (n-1+5)%5 )); echo \$n > $_JINIE_SEC; bash $_JINIE_TMP/gen.sh \$n $_JINIE_TMP)+first")
+
+if [[ -z "$selection" ]]; then
+    echo
+    echo " Cancelled."
+    echo
+    echo "====================================================" ; echo
+    exit 0
+fi
+
+prop=$(echo "$selection" | awk '{print $1}')
+
+echo
+echo "===================================================="
+echo
 
 # Execute file
 execfile="${JINIE_PATH}/JINIE/bin/${prop}"

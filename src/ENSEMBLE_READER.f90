@@ -16,17 +16,19 @@ module READER
 
    ! Checking Trajectory variables
    integer 	    			          :: init_check, dt_check, end_check, num_check
-   integer                                        :: init_t, end_t, usable_end
 
    ! Data variables
+   type						  :: ptr
+      double precision, pointer, dimension(:,:)   :: x, y, z, box
+      double precision, pointer, dimension(:)     :: vol
+   endtype
 
    real, allocatable, dimension(:)                :: xr, yr, zr
-   double precision, allocatable, dimension(:,:)  :: x, y, z
-   double precision, allocatable, dimension(:,:)  :: box
-   double precision, allocatable, dimension(:)    :: volume
+
+   type(ptr), allocatable, dimension(:)           :: ens
    
-   integer                                        :: nmedia, total_traj, atom_idx, traj_idx
-   integer, allocatable, dimension(:)             :: ntraj, ntraj_use
+   integer                                        :: nmedia, total_traj, atom_idx
+   integer, allocatable, dimension(:)             :: ntraj
 					           ! num_of_args : number of trajectories to link
    				                   ! nmedia : number of particles
    				                   ! total_traj : number of trajectory
@@ -68,7 +70,7 @@ module READER
            stop
         endif
 
-	allocate(filename(num_of_args), ntraj(num_of_args), ntraj_use(num_of_args))
+	allocate(filename(num_of_args), ntraj(num_of_args))
 
 	print*
         print*, "============================="
@@ -98,37 +100,19 @@ module READER
            ! dummyi(2); dt
            ! dummyi(3); trajectory end point
 
-           init_t = dummyi(1)
-           end_t = dummyi(3)
-
 	   if (nfile .eq. 1) then
-	      init_check = init_t
+	      init_check = dummyi(1) 
 	      dt_check   = dummyi(2)
-	      end_check  = end_t
+	      end_check  = dummyi(3)
 	      num_check  = nmedia
-              ntraj_use(1) = ntraj(1)
-	      print*, 'Trajectory end : ', end_check
 	   else
-	      ! Trajectory contininueous check
-	      if (end_check .ne. init_t) then
-                 if (end_check >= init_t) then
-	            usable_end = init_t - dt_check
-                    if (usable_end < init_check) then
-    		       ntraj_use(nfile-1)=0
-		    else
-		       ntraj_use(nfile-1)=(usable_end-init_check)/dt_check+1
-		    endif
-		 else
-                    print*, "------------ERROR------------"
-                    print*, "Trajectories should be linked"
-                    print*, "-----------------------------"
-                    stop
-		 endif
 
-	         ntraj_use(nfile) = ntraj(nfile)
-		 end_check = end_t
-              else
-                 ntraj_use(nfile) = ntraj(nfile)
+	      ! Initial point check
+	      if (init_check .ne. dummyi(1)) then
+                 print*, "---------------------ERROR---------------------"
+                 print*, "Trajectories should have the same initial point"
+                 print*, "-----------------------------------------------"
+                 stop
               endif
 
 	      ! Trajectory interval check
@@ -139,6 +123,14 @@ module READER
                  stop
               endif
 
+	      ! Initial point check
+	      if (end_check .ne. dummyi(3)) then
+                 print*, "-------------------ERROR-------------------"
+                 print*, "Trajectories should have the same end point"
+                 print*, "-------------------------------------------"
+                 stop
+              endif
+
 	      ! Nmedia check
 	      if (num_check .ne. nmedia) then
                  print*, "-------------ERROR-------------"
@@ -146,16 +138,13 @@ module READER
                  print*, "-------------------------------"
                  stop
               endif
-
-	      end_check = dummyi(3)
-	      print*, 'Trajectory end : ', end_check
 	   endif
 	enddo
 
 	print*
 	!---------------------------------------------------------------------------------------
 
-	total_traj=sum(ntraj_use)
+	total_traj=int((dummyi(3)-dummyi(1))/dummyi(2))+1
 	
 	print*, "------------INFO-------------"
 	print*, "Initial time    |", init_check
@@ -165,11 +154,17 @@ module READER
 	print*, "Number of atoms |", nmedia
         print*, "-----------------------------"
 	print*
-	
+
 	! X,Y,Z(Traj,atom), Box(traj,size)   
 	allocate(xr(nmedia), yr(nmedia), zr(nmedia))        
-        allocate(x(total_traj,nmedia), y(total_traj,nmedia), z(total_traj,nmedia),&
-		 box(total_traj,6), volume(total_traj))
+	allocate(ens(num_of_args))
+	do nfile=1,num_of_args
+	   allocate(ens(nfile)%x(total_traj,nmedia), &
+		    ens(nfile)%y(total_traj,nmedia), &
+		    ens(nfile)%z(total_traj,nmedia), &
+		    ens(nfile)%box(total_traj,6), &
+		    ens(nfile)%vol(total_traj))
+	enddo
 
 	if (mod(nmedia,8)==0) then
 	   num_Li=nmedia*3/8
@@ -190,29 +185,28 @@ module READER
 
 	! Reading Trajectory Data---------------------------------------------------------------
 
-	traj_idx=0
-
 	do nfile=1, num_of_args
 	   
 	   print*, "Reading ", trim(filename(nfile))
 	
-	   do i=1, ntraj_use(nfile)
+	   do i=1,total_traj
 
-	      read(10+nfile) (box(i+traj_idx,j), j=1,6) ! xx xy yy yz zx zz
+	      read(10+nfile) (ens(nfile)%box(i,j), j=1,6) ! xx xy yy yz zx zz
 	      read(10+nfile) (xr(j), j=1,nmedia)
 	      read(10+nfile) (yr(j), j=1,nmedia)
 	      read(10+nfile) (zr(j), j=1,nmedia)
 	      ! Improving precision : single > double
               do j = 1, nmedia
-                  x(i+traj_idx,j) = real(xr(j), kind=8)
-                  y(i+traj_idx,j) = real(yr(j), kind=8)
-                  z(i+traj_idx,j) = real(zr(j), kind=8)
+                  ens(nfile)%x(i,j) = real(xr(j), kind=8)
+                  ens(nfile)%y(i,j) = real(yr(j), kind=8)
+                  ens(nfile)%z(i,j) = real(zr(j), kind=8)
               end do
-	      volume(i+traj_idx)=box(i+traj_idx,1)*box(i+traj_idx,3)*box(i+traj_idx,6)
+	      ens(nfile)%vol(i)=ens(nfile)%box(i,1)&
+			       *ens(nfile)%box(i,3)&
+			       *ens(nfile)%box(i,6)
 	   enddo
 
 	   print*, nfile, "th file DONE.."
-	   traj_idx = traj_idx + ntraj_use(nfile)!-1 HAS TO BE CHECKED!!!!!!!!
 
 	enddo
 

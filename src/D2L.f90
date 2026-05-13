@@ -1,8 +1,11 @@
 program dcd2lammpstraj
 
-
    use READER
-   
+
+   implicit none
+
+   integer :: id
+
    call dcd_reader
  
    ! writing Trajectory Data---------------------------------------------------------------
@@ -19,7 +22,7 @@ program dcd2lammpstraj
       
       if (mod(i,10)==0) print*, i, 'th traj writing'
       write(100,'(A)') "ITEM: TIMESTEP"
-      write(100,'(I8)') dt_check*i
+      write(100,'(I8)') init_check + (i-1)*dt_check
       write(100,'(A)') "ITEM: NUMBER OF ATOMS"
       write(100,'(I8)') nmedia
       write(100,'(A)') "ITEM: BOX BOUNDS pp pp pp"

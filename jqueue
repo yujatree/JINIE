@@ -1,0 +1,225 @@
+#!/bin/bash
+
+#######################################
+# Configuration
+#######################################
+
+TARGET_USER=${1:-$(whoami)}
+REFRESH=1
+
+TOTAL_BAR=30
+
+FILLED="■"
+EMPTY="□"
+ACCUM_FILLED="◘"
+ACCUM_EMPTY="□"
+SEP="|"
+
+#######################################
+# ANSI colors (BAR ONLY)
+#######################################
+
+BLUE="\033[34m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+GRAY="\033[90m"
+RESET="\033[0m"
+
+#######################################
+# Slurm time → seconds
+#######################################
+
+timestr_to_seconds() {
+    local t=$1
+    local s=0
+
+    [[ -z "$t" || "$t" == "UNLIMITED" ]] && echo 0 && return
+
+    if [[ $t == *-* ]]; then
+        s=$((10#${t%%-*} * 86400))
+        t=${t#*-}
+    fi
+
+    IFS=':' read -ra p <<< "$t"
+    case ${#p[@]} in
+        3) s=$((s + 10#${p[0]}*3600 + 10#${p[1]}*60 + 10#${p[2]})) ;;
+        2) s=$((s + 10#${p[0]}*60 + 10#${p[1]})) ;;
+        1) s=$((s + 10#${p[0]})) ;;
+    esac
+
+    echo $s
+}
+
+#######################################
+# Progress bar generator (FINAL)
+#######################################
+
+get_progress_bar_v2() {
+    local elapsed=$1
+    local bar=""
+
+    # ---------- Case 1: < 1 hour ----------
+    if (( elapsed < 3600 )); then
+        local filled=$(( elapsed / 120 ))
+        (( filled > TOTAL_BAR )) && filled=$TOTAL_BAR
+
+        for ((i=0;i<TOTAL_BAR;i++)); do
+            if (( i < filled )); then
+                bar+="${BLUE}${FILLED}${RESET}"
+            else
+                bar+="${EMPTY}"
+            fi
+        done
+        echo "$bar"
+        return
+    fi
+
+    # ---------- Case 2: 1 hour – 1 day (4h cycle) ----------
+    if (( elapsed < 86400 )); then
+        local cycle=14400
+        local accum=$(( elapsed / cycle ))
+        (( accum > 6 )) && accum=6
+
+        local front=$(( (elapsed % cycle) / 600 ))
+        (( front > 23 )) && front=23
+
+        for ((i=0;i<23;i++)); do
+            if (( i < front )); then
+                bar+="${GREEN}${FILLED}${RESET}"
+            else
+                bar+="${EMPTY}"
+            fi
+        done
+
+        bar+="${SEP}"
+
+        for ((i=0;i<6;i++)); do
+            if (( i < accum )); then
+                bar+="${GREEN}${ACCUM_FILLED}${RESET}"
+            else
+                bar+="${ACCUM_EMPTY}"
+            fi
+        done
+
+        echo "$bar"
+        return
+    fi
+
+    # ---------- Case 3: 1 day – 1 week ----------
+    if (( elapsed < 604800 )); then
+        local days=$(( elapsed / 86400 ))
+        (( days > 6 )) && days=6
+
+        local hours=$(( (elapsed % 86400) / 3600 ))
+        (( hours > 23 )) && hours=23
+
+        for ((i=0;i<23;i++)); do
+            if (( i < hours )); then
+                bar+="${YELLOW}${FILLED}${RESET}"
+            else
+                bar+="${EMPTY}"
+            fi
+        done
+
+        bar+="${SEP}"
+
+        for ((i=0;i<6;i++)); do
+            if (( i < days )); then
+                bar+="${YELLOW}${ACCUM_FILLED}${RESET}"
+            else
+                bar+="${ACCUM_EMPTY}"
+            fi
+        done
+
+        echo "$bar"
+        return
+    fi
+
+    # ---------- Case 4: 1 week – 3 weeks ----------
+    if (( elapsed < 1814400 )); then
+        local weeks=$(( elapsed / 604800 ))
+        (( weeks > 2 )) && weeks=2
+
+        local blocks=$(( (elapsed % 604800) / 21600 ))
+        (( blocks > 27 )) && blocks=27
+
+        for ((i=0;i<27;i++)); do
+            if (( i < blocks )); then
+                bar+="${RED}${FILLED}${RESET}"
+            else
+                bar+="${EMPTY}"
+            fi
+        done
+
+        bar+="${SEP}"
+
+        for ((i=0;i<2;i++)); do
+            if (( i < weeks )); then
+                bar+="${RED}${ACCUM_FILLED}${RESET}"
+            else
+                bar+="${ACCUM_EMPTY}"
+            fi
+        done
+
+        echo "$bar"
+        return
+    fi
+
+    # ---------- Case 5: >= 3 weeks (FULL) ----------
+    for ((i=0;i<TOTAL_BAR;i++)); do
+        bar+="${RED}${FILLED}${RESET}"
+    done
+
+    echo "$bar"
+}
+
+#######################################
+# Pending bar
+#######################################
+
+get_pending_bar() {
+    local bar=""
+    for ((i=0;i<TOTAL_BAR;i++)); do
+        bar+="${GRAY}${EMPTY}${RESET}"
+    done
+    echo "$bar"
+}
+
+#######################################
+# Screen control
+#######################################
+
+echo -ne "\033[?1049h\033[2J\033[H\033[?25l"
+trap 'echo -ne "\033[?1049l\033[?25h"; exit' INT TERM
+
+#######################################
+# Main loop
+#######################################
+
+while true; do
+    echo -ne "\033[H"
+
+    printf "%-10s %-7s %-10s %-30s %-13s %s\n" \
+        "JOBID" "PTN" "NAME" "PROGRESS" "TIME" "NODELIST"
+    echo "==================================================================================="
+
+    squeue -u "$TARGET_USER" -h -o "%i|%P|%j|%t|%M|%N" |
+    while IFS='|' read -r jobid part name state time_used node; do
+        if [[ "$state" == "R" ]]; then
+            sec=$(timestr_to_seconds "$time_used")
+            bar=$(get_progress_bar_v2 "$sec")
+            time="($time_used)"
+        else
+            bar=$(get_pending_bar)
+            time="(PENDING)"
+        fi
+
+        # bar 뒤에 RESET 강제 → 색 전파 방지
+        printf "%-10s %-7s %-10s %b %-13s %s\n" \
+            "$jobid" "$part" "$name" "$bar" "$time" "$node"
+    done
+
+    sleep "$REFRESH"
+done
+
