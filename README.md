@@ -1,7 +1,7 @@
 <div align="center">
 
 
-**Fortran toolkit for the analysis of Li₃PS₄ molecular dynamics trajectories**
+# Toolkit for the analysis of Li₃PS₄ molecular dynamics
 
 *Program for the Analysis of LPS — Like a Genie !*
 
