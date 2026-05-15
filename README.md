@@ -11,7 +11,7 @@
 
 ![Fortran](https://img.shields.io/badge/Fortran-734F96?style=flat-square&logo=fortran&logoColor=white)
 ![Intel](https://img.shields.io/badge/Intel%20ifx-0071C5?style=flat-square&logo=intel&logoColor=white)
-![License](https://img.shields.io/github/license/wlsdk9803/JINIE?style=flat-square)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 </div>
 
